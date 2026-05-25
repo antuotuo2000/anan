@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReadBiz - 微软 (MSFT) 财报分析</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .table-row-hover:hover {
+            background-color: #f1f5f9;
+        }
+        .positive { color: #10b981; }
+        .negative { color: #ef4444; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .tab-btn.active {
+            border-bottom-color: #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="text-slate-900">
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <div class="text-2xl font-bold text-blue-600">ReadBiz</div>
+            <div class="relative">
+                <input type="text" placeholder="搜索股票代码 (如: MSFT)" class="pl-10 pr-4 py-1.5 bg-slate-100 border-none rounded-full text-sm w-64 focus:ring-2 focus:ring-blue-500">
+                <div class="absolute left-3 top-2 text-slate-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <div class="absolute right-3 top-2 text-[10px] bg-slate-200 px-1 rounded text-slate-500 font-mono">↵</div>
+            </div>
+        </div>
+        <div class="flex items-center space-x-6 text-sm font-medium text-slate-600">
+            <a href="#" class="hover:text-blue-600">市场</a>
+            <a href="#" class="hover:text-blue-600">选股器</a>
+            <a href="#" class="hover:text-blue-600">新闻</a>
+            <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-xs">AN</div>
+        </div>
+    </nav>
+
+    <!-- Ticker Tape -->
+    <div class="bg-slate-900 text-white py-1.5 px-4 overflow-hidden text-xs">
+        <div class="max-w-7xl mx-auto flex space-x-8 animate-pulse">
+            <div class="flex space-x-2"><span>AAPL</span><span class="text-emerald-400">192.32 +1.2%</span></div>
+            <div class="flex space-x-2"><span>MSFT</span><span class="text-emerald-400">425.22 +0.6%</span></div>
+            <div class="flex space-x-2"><span>GOOGL</span><span class="text-rose-400">175.32 -0.4%</span></div>
+            <div class="flex space-x-2"><span>AMZN</span><span class="text-emerald-400">182.11 +2.1%</span></div>
+            <div class="flex space-x-2"><span>NVDA</span><span class="text-emerald-400">1,064.69 +3.4%</span></div>
+            <div class="flex space-x-2"><span>META</span><span class="text-rose-400">472.11 -1.2%</span></div>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- Stock Header -->
+        <div class="flex flex-col md:flex-row md:items-end justify-between mb-8 space-y-4 md:space-y-0">
+            <div>
+                <div class="flex items-center space-x-3 mb-1">
+                    <h1 class="text-3xl font-bold">Microsoft Corp</h1>
+                    <span class="px-2 py-0.5 bg-slate-200 text-slate-700 text-xs font-semibold rounded">NASDAQ: MSFT</span>
+                </div>
+                <div class="text-slate-500 text-sm">软件和服务 | 微软</div>
+            </div>
+            <div class="flex flex-col items-end">
+                <div class="text-3xl font-bold">$425.22</div>
+                <div class="text-sm font-medium positive flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="m18 15-6-6-6 6"/></svg>
+                    +$2.45 (0.58%) 今日
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-slate-200 mb-8 overflow-x-auto whitespace-nowrap">
+            <button class="tab-btn px-6 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 active" onclick="switchTab('summary')">财报分析</button>
+            <button class="tab-btn px-6 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700" onclick="switchTab('income')">利润表</button>
+            <button class="tab-btn px-6 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700" onclick="switchTab('balance')">资产负债表</button>
+            <button class="tab-btn px-6 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700" onclick="switchTab('cashflow')">现金流量表</button>
+            <button class="tab-btn px-6 py-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700" onclick="switchTab('metrics')">关键指标</button>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div id="summary-section" class="tab-content active">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column: Summary and Charts -->
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Summary Stats -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="card p-4">
+                            <div class="text-slate-500 text-xs mb-1">总营收 (Q1 2026)</div>
+                            <div class="text-xl font-bold">$82.89B</div>
+                            <div class="text-xs positive">+18.3% YoY</div>
+                        </div>
+                        <div class="card p-4">
+                            <div class="text-slate-500 text-xs mb-1">净利润 (Q1 2026)</div>
+                            <div class="text-xl font-bold">$31.78B</div>
+                            <div class="text-xs positive">+23.1% YoY</div>
+                        </div>
+                        <div class="card p-4">
+                            <div class="text-slate-500 text-xs mb-1">毛利率</div>
+                            <div class="text-xl font-bold">67.6%</div>
+                            <div class="text-xs negative">-1.1pp YoY</div>
+                        </div>
+                        <div class="card p-4">
+                            <div class="text-slate-500 text-xs mb-1">每股收益 (EPS)</div>
+                            <div class="text-xl font-bold">$4.27</div>
+                            <div class="text-xs positive">+23.4% YoY</div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="card p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold">营收与净利润趋势</h3>
+                            <div class="flex bg-slate-100 p-1 rounded-lg text-xs">
+                                <button class="px-3 py-1 bg-white rounded shadow-sm font-medium">季度</button>
+                                <button class="px-3 py-1 text-slate-500 hover:text-slate-700">年度</button>
+                            </div>
+                        </div>
+                        <div id="revenue-chart" style="width: 100%; height: 350px;"></div>
+                    </div>
+
+                    <!-- Financial Use Cases -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="card p-5 border-l-4 border-blue-500">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-sm">用途：追踪收入和支出</h4>
+                                    <p class="text-xs text-slate-500 mt-1">类似于你的月度预算。追踪一段时期内的会计权责发生制表现。</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card p-5 border-l-4 border-indigo-500">
+                            <div class="flex items-start space-x-3">
+                                <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-sm">用途：追踪资产和欠债</h4>
+                                    <p class="text-xs text-slate-500 mt-1">类似于你的净资产快照。展示特定时间点的财务状况。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Income Statement Table Snippet -->
+                    <div class="card overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+                            <h3 class="text-lg font-bold">利润表概要 (期间)</h3>
+                            <button class="text-blue-600 text-sm font-medium" onclick="switchTab('income')">查看完整表单</button>
+                        </div>
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                                <tr>
+                                    <th class="px-6 py-3 font-semibold">财务项目</th>
+                                    <th class="px-6 py-3 font-semibold text-right">2026 Q1</th>
+                                    <th class="px-6 py-3 font-semibold text-right">同比增长</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr class="table-row-hover">
+                                    <td class="px-6 py-4 font-medium">营业收入 (Revenue)</td>
+                                    <td class="px-6 py-4 text-right font-semibold">828.9亿</td>
+                                    <td class="px-6 py-4 text-right positive">+18.3%</td>
+                                </tr>
+                                <tr class="table-row-hover">
+                                    <td class="px-6 py-4 font-medium">销售成本 (COGS)</td>
+                                    <td class="px-6 py-4 text-right">268.3亿</td>
+                                    <td class="px-6 py-4 text-right text-slate-600">+22.4%</td>
+                                </tr>
+                                <tr class="table-row-hover bg-blue-50/30">
+                                    <td class="px-6 py-4 font-bold text-blue-900">毛利润 (Gross Profit)</td>
+                                    <td class="px-6 py-4 text-right font-bold text-blue-900">560.6亿</td>
+                                    <td class="px-6 py-4 text-right positive">+16.4%</td>
+                                </tr>
+                                <tr class="table-row-hover">
+                                    <td class="px-6 py-4 font-medium">营业费用 (OpEx)</td>
+                                    <td class="px-6 py-4 text-right">176.6亿</td>
+                                    <td class="px-6 py-4 text-right text-slate-600">+9.4%</td>
+                                </tr>
+                                <tr class="table-row-hover bg-blue-50/50">
+                                    <td class="px-6 py-4 font-bold text-blue-900">营业利润 (Operating Income)</td>
+                                    <td class="px-6 py-4 text-right font-bold text-blue-900">384.0亿</td>
+                                    <td class="px-6 py-4 text-right positive">+20.0%</td>
+                                </tr>
+                                <tr class="table-row-hover">
+                                    <td class="px-6 py-4 font-medium">所得税 (Income Tax)</td>
+                                    <td class="px-6 py-4 text-right">75.6亿</td>
+                                    <td class="px-6 py-4 text-right text-slate-600">+36.2%</td>
+                                </tr>
+                                <tr class="table-row-hover bg-blue-600 text-white">
+                                    <td class="px-6 py-4 font-bold">净利润 (Net Income)</td>
+                                    <td class="px-6 py-4 text-right font-bold">317.8亿</td>
+                                    <td class="px-6 py-4 text-right">+23.1%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Column: Balance Sheet & Sidebar Info -->
+                <div class="space-y-8">
+                    <!-- Stock Metrics Card -->
+                    <div class="card p-6">
+                        <h3 class="text-lg font-bold mb-4">关键估值指标</h3>
+                        <div class="grid grid-cols-2 gap-y-4">
+                            <div>
+                                <div class="text-xs text-slate-500">市值</div>
+                                <div class="font-bold">3.15万亿</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">市盈率 (P/E)</div>
+                                <div class="font-bold">38.42</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">股息率</div>
+                                <div class="font-bold">0.71%</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">52周最高</div>
+                                <div class="font-bold">$433.82</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Balance Sheet Summary -->
+                    <div class="card p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="text-lg font-bold">资产负债表快照</h3>
+                            <div class="text-[10px] uppercase font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">资产 = 负债 + 所有者权益</div>
+                        </div>
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-slate-500">流动资产</span>
+                                    <span class="font-bold">1,757.4亿</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-blue-500 h-full" style="width: 35%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-slate-500">长期资产</span>
+                                    <span class="font-bold">4,963.2亿</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-blue-700 h-full" style="width: 65%"></div>
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-slate-100">
+                                <div class="flex justify-between text-sm mb-2">
+                                    <span class="text-slate-500">总负债</span>
+                                    <span class="font-bold">2,710.0亿</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                    <div class="bg-red-500 h-full" style="width: 40%"></div>
+                                </div>
+                            </div>
+                            <div class="flex justify-between text-sm font-bold pt-2">
+                                <span>股东权益</span>
+                                <span>4,010.6亿</span>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4 mt-8">
+                            <div class="bg-slate-50 p-3 rounded-lg">
+                                <div class="text-xs text-slate-500 mb-1">流动比率</div>
+                                <div class="font-bold">1.28x</div>
+                            </div>
+                            <div class="bg-slate-50 p-3 rounded-lg">
+                                <div class="text-xs text-slate-500 mb-1">负债率</div>
+                                <div class="font-bold">40.3%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cash Flow -->
+                    <div class="card p-6">
+                        <h3 class="text-lg font-bold mb-4">现金流分析</h3>
+                        <div id="cashflow-chart" style="width: 100%; height: 250px;"></div>
+                        <div class="mt-4 space-y-3">
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">经营活动现金流</span>
+                                <span class="font-semibold text-emerald-600">466.8亿</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="text-slate-500">自由现金流</span>
+                                <span class="font-semibold text-blue-600">324.5亿</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Income Statement -->
+        <div id="income-section" class="tab-content">
+            <div class="card overflow-hidden">
+                <div class="p-6 border-b border-slate-100">
+                    <h2 class="text-2xl font-bold">利润表 (Income Statement)</h2>
+                    <p class="text-slate-500 text-sm mt-1">期间：2026年第一季度 (Q1 2026)</p>
+                </div>
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                        <tr>
+                            <th class="px-6 py-4 font-semibold">项目名称</th>
+                            <th class="px-6 py-4 font-semibold text-right">金额 (USD)</th>
+                            <th class="px-6 py-4 font-semibold text-right">增长率 (YoY)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr><td class="px-6 py-4 font-bold text-slate-900">营业收入 (Revenue)</td><td class="px-6 py-4 text-right font-bold">828.9亿</td><td class="px-6 py-4 text-right positive">+18.3%</td></tr>
+                        <tr><td class="px-6 py-4 pl-10 text-slate-600">销售成本 (COGS)</td><td class="px-6 py-4 text-right">268.3亿</td><td class="px-6 py-4 text-right">+22.4%</td></tr>
+                        <tr class="bg-slate-50/50"><td class="px-6 py-4 font-bold text-blue-600">毛利润 (Gross Profit)</td><td class="px-6 py-4 text-right font-bold text-blue-600">560.6亿</td><td class="px-6 py-4 text-right positive">+16.4%</td></tr>
+                        <tr><td class="px-6 py-4 pl-10 text-slate-600">研发费用 (R&D)</td><td class="px-6 py-4 text-right">82.1亿</td><td class="px-6 py-4 text-right">+8.5%</td></tr>
+                        <tr><td class="px-6 py-4 pl-10 text-slate-600">销售与市场费用 (S&M)</td><td class="px-6 py-4 text-right">64.2亿</td><td class="px-6 py-4 text-right">+12.3%</td></tr>
+                        <tr><td class="px-6 py-4 pl-10 text-slate-600">一般与行政费用 (G&A)</td><td class="px-6 py-4 text-right">30.3亿</td><td class="px-6 py-4 text-right">+5.4%</td></tr>
+                        <tr class="bg-slate-50/50"><td class="px-6 py-4 font-bold text-blue-600">营业利润 (Operating Income)</td><td class="px-6 py-4 text-right font-bold text-blue-600">384.0亿</td><td class="px-6 py-4 text-right positive">+20.0%</td></tr>
+                        <tr><td class="px-6 py-4 text-slate-600">非经营性收支 (Non-Op)</td><td class="px-6 py-4 text-right">9.4亿</td><td class="px-6 py-4 text-right positive">转正</td></tr>
+                        <tr class="bg-slate-50/50"><td class="px-6 py-4 font-bold text-slate-900">税前利润 (Pre-Tax Income)</td><td class="px-6 py-4 text-right font-bold">393.4亿</td><td class="px-6 py-4 text-right positive">+25.4%</td></tr>
+                        <tr><td class="px-6 py-4 text-slate-600">所得税 (Income Tax)</td><td class="px-6 py-4 text-right">75.6亿</td><td class="px-6 py-4 text-right">+36.2%</td></tr>
+                        <tr class="bg-blue-600 text-white"><td class="px-6 py-4 font-bold">净利润 (Net Income)</td><td class="px-6 py-4 text-right font-bold">317.8亿</td><td class="px-6 py-4 text-right">+23.1%</td></tr>
+                        <tr><td class="px-6 py-4 text-slate-600">流通股数 (Shares Outstanding)</td><td class="px-6 py-4 text-right">74.5亿股</td><td class="px-6 py-4 text-right text-slate-400">-0.2%</td></tr>
+                        <tr class="bg-slate-900 text-white"><td class="px-6 py-4 font-bold">每股收益 (EPS)</td><td class="px-6 py-4 text-right font-bold">$4.27</td><td class="px-6 py-4 text-right positive">+23.4%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detailed Balance Sheet -->
+        <div id="balance-section" class="tab-content">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Assets -->
+                <div class="card overflow-hidden">
+                    <div class="p-6 border-b border-slate-100 bg-emerald-50/30">
+                        <h2 class="text-xl font-bold text-emerald-800">资产 (Assets)</h2>
+                    </div>
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                            <tr><th class="px-6 py-3 font-semibold">流动资产 (Current Assets)</th><th class="px-6 py-3 text-right">金额</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td class="px-6 py-4 pl-8 text-slate-600">现金及现金等价物</td><td class="px-6 py-4 text-right">321.1亿</td></tr>
+                            <tr><td class="px-6 py-4 pl-8 text-slate-600">可交易证券</td><td class="px-6 py-4 text-right">461.7亿</td></tr>
+                            <tr><td class="px-6 py-4 pl-8 text-slate-600">应收账款</td><td class="px-6 py-4 text-right">600.4亿</td></tr>
+                            <tr><td class="px-6 py-4 pl-8 text-slate-600">存货</td><td class="px-6 py-4 text-right">12.2亿</td></tr>
+                            <tr class="bg-slate-50/50 font-bold"><td class="px-6 py-4 text-slate-900">流动资产合计</td><td class="px-6 py-4 text-right">1,757.4亿</td></tr>
+                        </tbody>
+                        <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                            <tr><th class="px-6 py-3 font-semibold">长期资产 (Long-Term Assets)</th><th class="px-6 py-3 text-right">金额</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr><td class="px-6 py-4 pl-8 text-slate-600">固定资产 (PP&E)</td><td class="px-6 py-4 text-right">2,832.3亿</td></tr>
+                            <tr><td class="px-6 py-4 pl-8 text-slate-600">商誉 (Goodwill)</td><td class="px-6 py-4 text-right">1,196.6亿</td></tr>
+                            <tr><td class="px-6 py-4 pl-8 text-slate-600">长期投资</td><td class="px-6 py-4 text-right">111.0亿</td></tr>
+                            <tr class="bg-emerald-600 text-white font-bold"><td class="px-6 py-4">总资产 (Total Assets)</td><td class="px-6 py-4 text-right">6,720.6亿</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Liabilities & Equity -->
+                <div class="space-y-8">
+                    <div class="card overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 bg-rose-50/30">
+                            <h2 class="text-xl font-bold text-rose-800">负债 (Liabilities)</h2>
+                        </div>
+                        <table class="w-full text-sm text-left">
+                            <tbody class="divide-y divide-slate-100">
+                                <tr><td class="px-6 py-4 text-slate-900 font-medium">流动负债 (Current)</td><td class="px-6 py-4 text-right">1,366.6亿</td></tr>
+                                <tr><td class="px-6 py-4 text-slate-900 font-medium">长期负债 (Long-term)</td><td class="px-6 py-4 text-right">1,343.4亿</td></tr>
+                                <tr class="bg-rose-600 text-white font-bold"><td class="px-6 py-4">总负债 (Total Liabilities)</td><td class="px-6 py-4 text-right">2,710.0亿</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 bg-blue-50/30">
+                            <h2 class="text-xl font-bold text-blue-800">股东权益 (Equity)</h2>
+                        </div>
+                        <table class="w-full text-sm text-left">
+                            <tbody class="divide-y divide-slate-100">
+                                <tr><td class="px-6 py-4 text-slate-600">普通股本</td><td class="px-6 py-4 text-right">1,150.7亿</td></tr>
+                                <tr><td class="px-6 py-4 text-slate-600">留存收益</td><td class="px-6 py-4 text-right">3,025.3亿</td></tr>
+                                <tr class="bg-blue-600 text-white font-bold"><td class="px-6 py-4">总股东权益 (Total Equity)</td><td class="px-6 py-4 text-right">4,010.6亿</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Cash Flow -->
+        <div id="cashflow-section" class="tab-content">
+            <div class="card overflow-hidden">
+                <div class="p-6 border-b border-slate-100">
+                    <h2 class="text-2xl font-bold">现金流量表 (Cash Flow Statement)</h2>
+                </div>
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-slate-50 text-slate-500 uppercase text-xs">
+                        <tr><th class="px-6 py-4 font-semibold">项目名称</th><th class="px-6 py-4 font-semibold text-right">金额 (USD)</th><th class="px-6 py-4 font-semibold text-right">同比增长</th></tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr class="bg-emerald-50/20"><td class="px-6 py-4 font-bold text-emerald-800">经营活动现金流 (Operating)</td><td class="px-6 py-4 text-right font-bold">466.8亿</td><td class="px-6 py-4 text-right positive">+26.0%</td></tr>
+                        <tr><td class="px-6 py-4 pl-10 text-slate-600">净利润 (Net Income)</td><td class="px-6 py-4 text-right">317.8亿</td><td class="px-6 py-4 text-right">+23.1%</td></tr>
+                        <tr><td class="px-6 py-4 pl-10 text-slate-600">非现金项目调整</td><td class="px-6 py-4 text-right">14.3亿</td><td class="px-6 py-4 text-right">-50.2%</td></tr>
+                        <tr><td class="px-6 py-4 pl-10 text-slate-600">营运资本变动</td><td class="px-6 py-4 text-right">134.7亿</td><td class="px-6 py-4 text-right">+61.3%</td></tr>
+                        
+                        <tr class="bg-rose-50/20"><td class="px-6 py-4 font-bold text-rose-800">投资活动现金流 (Investing)</td><td class="px-6 py-4 text-right font-bold">-285.3亿</td><td class="px-6 py-4 text-right text-rose-500">流出增加</td></tr>
+                        <tr><td class="px-6 py-4 pl-10 text-slate-600">资本支出 (CapEx)</td><td class="px-6 py-4 text-right">-142.3亿</td><td class="px-6 py-4 text-right">+78.5%</td></tr>
+                        
+                        <tr class="bg-amber-50/20"><td class="px-6 py-4 font-bold text-amber-800">筹资活动现金流 (Financing)</td><td class="px-6 py-4 text-right font-bold">-124.5亿</td><td class="px-6 py-4 text-right text-amber-500">流出减少</td></tr>
+                        <tr><td class="px-6 py-4 pl-10 text-slate-600">分红支出</td><td class="px-6 py-4 text-right">-56.1亿</td><td class="px-6 py-4 text-right">+10.4%</td></tr>
+                        
+                        <tr class="bg-blue-600 text-white font-bold"><td class="px-6 py-4">自由现金流 (Free Cash Flow)</td><td class="px-6 py-4 text-right">324.5亿</td><td class="px-6 py-4 text-right">+11.5%</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detailed Key Metrics -->
+        <div id="metrics-section" class="tab-content">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="card p-6">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">盈利能力指标</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end"><span class="text-slate-600">毛利率</span><div class="text-right"><div class="font-bold">67.6%</div><div class="text-xs negative">-1.1pp</div></div></div>
+                        <div class="flex justify-between items-end"><span class="text-slate-600">营业利润率</span><div class="text-right"><div class="font-bold">46.3%</div><div class="text-xs positive">+0.7pp</div></div></div>
+                        <div class="flex justify-between items-end"><span class="text-slate-600">净利率</span><div class="text-right"><div class="font-bold">38.3%</div><div class="text-xs positive">+1.5pp</div></div></div>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">偿债能力指标</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end"><span class="text-slate-600">流动比率</span><div class="text-right"><div class="font-bold">1.28x</div><div class="text-xs negative">-0.09</div></div></div>
+                        <div class="flex justify-between items-end"><span class="text-slate-600">资产负债率</span><div class="text-right"><div class="font-bold">40.3%</div><div class="text-xs positive">-2.5pp</div></div></div>
+                        <div class="flex justify-between items-end"><span class="text-slate-600">速动比率</span><div class="text-right"><div class="font-bold">1.22x</div><div class="text-xs negative">-0.11</div></div></div>
+                    </div>
+                </div>
+                <div class="card p-6">
+                    <h3 class="text-sm font-bold text-slate-500 uppercase mb-4">运营效率指标</h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end"><span class="text-slate-600">应收账款周转天数</span><div class="text-right"><div class="font-bold">65.2天</div><div class="text-xs negative">+2.1天</div></div></div>
+                        <div class="flex justify-between items-end"><span class="text-slate-600">存货周转天数</span><div class="text-right"><div class="font-bold">4.2天</div><div class="text-xs positive">-0.5天</div></div></div>
+                        <div class="flex justify-between items-end"><span class="text-slate-600">总资产周转率</span><div class="text-right"><div class="font-bold">0.12x</div><div class="text-xs positive">+0.01</div></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 mt-16 py-12">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-8">
+            <div class="col-span-2">
+                <div class="text-xl font-bold text-blue-600 mb-4">ReadBiz</div>
+                <p class="text-slate-500 text-sm max-w-xs">为投资者提供最直观、最深入的财务报表分析工具，让投资决策更简单。</p>
+            </div>
+            <div>
+                <h5 class="font-bold text-sm mb-4 uppercase">产品</h5>
+                <ul class="text-slate-500 text-sm space-y-2">
+                    <li><a href="#" class="hover:text-blue-600">功能介绍</a></li>
+                    <li><a href="#" class="hover:text-blue-600">定价方案</a></li>
+                    <li><a href="#" class="hover:text-blue-600">API 接口</a></li>
+                </ul>
+            </div>
+            <div>
+                <h5 class="font-bold text-sm mb-4 uppercase">支持</h5>
+                <ul class="text-slate-500 text-sm space-y-2">
+                    <li><a href="#" class="hover:text-blue-600">帮助中心</a></li>
+                    <li><a href="#" class="hover:text-blue-600">联系我们</a></li>
+                    <li><a href="#" class="hover:text-blue-600">隐私协议</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto px-4 mt-12 pt-8 border-t border-slate-100 text-center text-slate-400 text-xs">
+            © 2026 ReadBiz. 版权所有。数据仅供参考，不构成投资建议。
+        </div>
+    </footer>
+
+    <script>
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            // Update Tab Buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'border-blue-600', 'text-blue-600', 'font-semibold');
+                btn.classList.add('border-transparent', 'text-slate-500');
+            });
+            const activeBtn = event ? event.currentTarget : document.querySelector(`.tab-btn[onclick*="${tabId}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'border-blue-600', 'text-blue-600', 'font-semibold');
+                activeBtn.classList.remove('border-transparent', 'text-slate-500');
+            }
+
+            // Update Tab Content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabId}-section`).classList.add('active');
+
+            // Resize charts if switching to summary
+            if (tabId === 'summary') {
+                setTimeout(() => {
+                    revenueChart.resize();
+                    cashflowChart.resize();
+                }, 10);
+            }
+        }
+
+        // Initialize Revenue & Net Income Chart
+        const revenueChart = echarts.init(document.getElementById('revenue-chart'));
+        revenueChart.setOption({
+            tooltip: { trigger: 'axis' },
+            legend: { data: ['营业收入', '净利润'], bottom: 0 },
+            grid: { left: '3%', right: '4%', bottom: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: ['2025 Q1', '2025 Q2', '2025 Q3', '2025 Q4', '2026 Q1']
+            },
+            yAxis: { type: 'value', axisLabel: { formatter: '{value}B' } },
+            series: [
+                {
+                    name: '营业收入',
+                    type: 'line',
+                    smooth: true,
+                    data: [65.2, 70.1, 72.5, 78.4, 82.9],
+                    itemStyle: { color: '#3b82f6' },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(59, 130, 246, 0.3)' },
+                            { offset: 1, color: 'rgba(59, 130, 246, 0)' }
+                        ])
+                    }
+                },
+                {
+                    name: '净利润',
+                    type: 'line',
+                    smooth: true,
+                    data: [22.4, 25.8, 26.5, 29.1, 31.8],
+                    itemStyle: { color: '#10b981' },
+                    areaStyle: {
+                        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                            { offset: 0, color: 'rgba(16, 185, 129, 0.3)' },
+                            { offset: 1, color: 'rgba(16, 185, 129, 0)' }
+                        ])
+                    }
+                }
+            ]
+        });
+
+        // Initialize Cash Flow Chart
+        const cashflowChart = echarts.init(document.getElementById('cashflow-chart'));
+        cashflowChart.setOption({
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            grid: { top: '10%', left: '3%', right: '4%', bottom: '3%', containLabel: true },
+            xAxis: { type: 'category', data: ['经营', '投资', '筹资'] },
+            yAxis: { type: 'value' },
+            series: [
+                {
+                    name: '现金流',
+                    type: 'bar',
+                    barWidth: '40%',
+                    data: [
+                        { value: 466.8, itemStyle: { color: '#10b981' } },
+                        { value: -285.3, itemStyle: { color: '#ef4444' } },
+                        { value: -124.5, itemStyle: { color: '#f59e0b' } }
+                    ]
+                }
+            ]
+        });
+
+        window.addEventListener('resize', function() {
+            revenueChart.resize();
+            cashflowChart.resize();
+        });
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ensure the first tab is visually active
+            const firstTab = document.querySelector('.tab-btn');
+            if (firstTab) {
+                firstTab.classList.add('active', 'border-blue-600', 'text-blue-600', 'font-semibold');
+                firstTab.classList.remove('border-transparent', 'text-slate-500');
+            }
+        });
+    </script>
+</body>
+</html>
